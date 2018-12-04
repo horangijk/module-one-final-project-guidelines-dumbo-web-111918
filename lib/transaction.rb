@@ -1,2 +1,4 @@
 class Transaction < ActiveRecord::Base
-end 
+  belongs_to :user
+  belongs_to :electronic
+end

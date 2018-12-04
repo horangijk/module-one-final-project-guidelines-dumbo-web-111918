@@ -1,2 +1,4 @@
 class User < ActiveRecord::Base
-end 
+  has_many :transactions
+  has_many :electronics, through: :transactions
+end
