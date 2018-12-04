@@ -4,9 +4,13 @@ class User < ActiveRecord::Base
 
   def self.login
     logged_in = false
-    until logged_in
-      puts "Enter your username: "
-        username = STDIN.gets.chomp
+    exit = false
+    until logged_in || exit
+      puts "Enter your username, or type 'exit': "
+      username = STDIN.gets.chomp
+      if username == 'exit'
+        exit = true
+      else
         current_user = User.find_by(username: username)
         if current_user
           puts "Enter your password. "
@@ -15,7 +19,7 @@ class User < ActiveRecord::Base
         else
           puts "Invalid username."
         end
+      end
     end
   end
-
 end
