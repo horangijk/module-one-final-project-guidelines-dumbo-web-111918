@@ -1,5 +1,5 @@
 $current_user = nil
-
+$cart = []
 def login
   logged_in = false
   exit = false
@@ -43,4 +43,12 @@ def create_account
       puts "Username already chosen!"
     end
   end
+end
+
+def add_to_cart(product)
+  $cart << product
+end
+
+def cart
+  $cart
 end

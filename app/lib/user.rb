@@ -5,11 +5,23 @@ class User < ActiveRecord::Base
 
 
   def shop
+    complete = false
     categories = Electronic.categories
     prompt = TTY::Prompt.new
-    category = prompt.enum_select("Select from the following: ", categories)
-    product_names = Electronic.where(category: category).map {|p| p.name}
-    product_name = prompt.enum_select("Select from the following: ", product_names)
-    Electronic.find_by(name: product_name)
+
+    until complete
+      category = prompt.enum_select("Select from the following: ", categories)
+      product_names = Electronic.where(category: category).map {|p| p.name}
+      product_name = prompt.enum_select("Select from the following: ", product_names)
+      product = Electronic.find_by(name: product_name)
+      if prompt.yes?('Add to cart?')
+        add_to_cart(product)
+        complete = true
+      end
+    end 
+
+
   end
+
+
 end
