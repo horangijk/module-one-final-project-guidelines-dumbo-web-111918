@@ -10,6 +10,7 @@ class User < ActiveRecord::Base
       username = STDIN.gets.chomp
       if username == 'exit'
         exit = true
+        puts "Exiting!"
       else
         current_user = User.find_by(username: username)
         if current_user
