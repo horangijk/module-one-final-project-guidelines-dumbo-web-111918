@@ -8,7 +8,7 @@ class User < ActiveRecord::Base
     complete = false
     categories = Electronic.categories
     prompt = TTY::Prompt.new
-
+    
     until complete
       category = prompt.enum_select("Select from the following: ", categories)
       product_names = Electronic.where(category: category).map {|p| p.name}
@@ -18,7 +18,7 @@ class User < ActiveRecord::Base
         add_to_cart(product)
         complete = true
       end
-    end 
+    end
 
 
   end

@@ -1,5 +1,6 @@
 $current_user = nil
 $cart = []
+
 def login
   logged_in = false
   exit = false
@@ -52,3 +53,29 @@ end
 def cart
   $cart
 end
+
+def menu
+  
+end
+
+def start
+  quit = false
+  choices = ["Login", "Create Account", "Quit"]
+  prompt = TTY::Prompt.new
+  until quit
+    choice = prompt.enum_select("Welcome to Osumazon! What would you like to do?", choices)
+    case choice
+    when "Login"
+      if login
+        menu
+      end
+    when "Create Account"
+      create_account
+    when "Quit"
+      puts "Bye bye from Osumazon!"
+      quit = true
+    end
+  end
+end
+
+start
