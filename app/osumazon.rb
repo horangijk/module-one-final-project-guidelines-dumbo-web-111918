@@ -63,7 +63,7 @@ def review_cart
   prompt = TTY::Prompt.new
   indices_to_delete = prompt.multi_select("Choose items to delete: ", choices)
   indices_to_delete.each do |index|
-    if prompt.yes?("Are you sure you want to delete #{$cart[index].name}?")
+    if prompt.select("Are you sure you want to delete #{$cart[index].name}?", ["Yes", "No"]) == "Yes"
       puts "Deleted #{$cart[index].name}."
       $cart.delete_at(index)
     end
@@ -86,7 +86,12 @@ def menu
           puts "Go get some shit!"
         else
           review_cart
-          checkout
+          if $cart.empty?
+            puts "Your cart is empty."
+            puts "Go get some shit!"
+          else
+            checkout
+          end
         end
       when "Logout"
         puts "You are logged out."
@@ -109,7 +114,7 @@ def checkout
   end
   puts "Your cart is $#{sum}."
   prompt = TTY::Prompt.new
-  if prompt.yes?("Do you wish to checkout?")
+  if prompt.select("Do you wish to checkout?", ["Yes", "No"]) == "Yes"
     $cart.each do |item|
       new_trans = Transaction.find_or_create_by(user_id: $current_user.id , electronic_id: item.id)
       new_trans.quantity ||= 0
@@ -137,9 +142,11 @@ def shop
     else
       product_name = prompt.select("Select from the following: ", product_names)
       product = Electronic.find_by(name: product_name)
-      if prompt.yes?('Add to cart?')
+      if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
         add_to_cart(product)
         complete = true
+      else
+        puts "Have fun!"
       end
       category = nil
       product_name = nil
@@ -182,7 +189,7 @@ def settings
       $current_user.save
       puts "Password updated."
     when "Delete Account"
-      if prompt.yes?("Are you sure you want to delete your account?")
+      if prompt.select('Are you sure you want to delete your account?', ["Yes", "No"]) == "Yes"
         $current_user.destroy
         exit = true
         puts "Sorry to see you go! :("
