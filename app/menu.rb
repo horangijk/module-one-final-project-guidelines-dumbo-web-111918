@@ -27,6 +27,7 @@ def login
       end
     end
   end
+  logged_in
 end
 
 def create_account
@@ -55,7 +56,55 @@ def cart
 end
 
 def menu
-  
+  prompt = TTY::Prompt.new
+  menu = ["Shop", "Checkout", "Logout"]
+
+  logged_out = false
+  until logged_out
+    choice = prompt.select("What would you like to do? ", menu)
+    case choice
+    when "Shop"
+      shop
+
+    when "Checkout"
+      checkout
+    when "Logout"
+      puts "You are logged out."
+      $current_user = nil
+      $cart = []
+      logged_out = true
+    end
+  end
+end
+
+def checkout
+  cart.each { |item| Transaction.create(user_id: $current_user.id , electronic_id: item.id) }
+end
+
+def shop
+  complete = false
+  categories = Electronic.categories
+  categories << "exit"
+  prompt = TTY::Prompt.new
+
+  until complete
+    category = prompt.select("Select from the following: ", categories)
+    product_names = Electronic.where(category: category).map {|p| p.name}
+    if category == "exit"
+      complete = true
+    else
+      product_name = prompt.select("Select from the following: ", product_names)
+      product = Electronic.find_by(name: product_name)
+      if prompt.yes?('Add to cart?')
+        add_to_cart(product)
+        complete = true
+      end
+      category = nil
+      product_name = nil
+    end
+  end
+
+
 end
 
 def start
@@ -63,7 +112,7 @@ def start
   choices = ["Login", "Create Account", "Quit"]
   prompt = TTY::Prompt.new
   until quit
-    choice = prompt.enum_select("Welcome to Osumazon! What would you like to do?", choices)
+    choice = prompt.select("Welcome to Osumazon! What would you like to do?", choices)
     case choice
     when "Login"
       if login
@@ -77,5 +126,3 @@ def start
     end
   end
 end
-
-start
