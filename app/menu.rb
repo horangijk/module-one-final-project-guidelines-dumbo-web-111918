@@ -78,7 +78,29 @@ def menu
 end
 
 def checkout
-  cart.each { |item| Transaction.create(user_id: $current_user.id , electronic_id: item.id) }
+  if $cart.empty?
+    puts "Your cart is empty."
+    puts "Go get some shit!"
+  else
+    sum = 0.0
+    $cart.each do |item|
+      sum += item.price
+    end
+    puts "Your cart is $#{sum}."
+    prompt = TTY::Prompt.new
+    if prompt.yes?("Do you wish to checkout?")
+      $cart.each do |item|
+        new_trans = Transaction.find_or_create_by(user_id: $current_user.id , electronic_id: item.id)
+        new_trans.quantity ||= 0
+        new_trans.quantity += 1
+        new_trans.save
+      end
+      $cart = []
+      puts "You spent $#{sum}."
+    else
+      puts "Okay, bye!"
+    end
+  end
 end
 
 def shop
