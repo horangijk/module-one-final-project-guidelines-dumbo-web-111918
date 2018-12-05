@@ -55,51 +55,65 @@ def cart
   $cart
 end
 
+def show_cart
+  choices = $cart.map do |item|
+    item.name
+  end
+  prompt = TTY::Prompt.new
+  items_to_delete = prompt.multi_select("Choose items to delete: ", choices)
+  items_to_delete.each do |item|
+    if prompt.yes?("Are you sure you want to delete #{item}?")
+      $cart.delete_if {|obj| obj.name == item}
+      puts "Deleted #{item}."
+    end
+  end
+end
+
 def menu
   prompt = TTY::Prompt.new
-  menu = ["Shop", "Checkout", "Logout"]
-
+  options = ["Shop", "Checkout", "Logout"]
   logged_out = false
-  until logged_out
-    choice = prompt.select("What would you like to do? ", menu)
-    case choice
-    when "Shop"
-      shop
 
-    when "Checkout"
-      checkout
-    when "Logout"
-      puts "You are logged out."
-      $current_user = nil
-      $cart = []
-      logged_out = true
+  until logged_out
+    choice = prompt.select("What would you like to do? ", options)
+    case choice
+      when "Shop"
+        shop
+      when "Checkout"
+        if $cart.empty?
+          puts "Your cart is empty."
+          puts "Go get some shit!"
+        else
+          show_cart
+          checkout
+        end
+      when "Logout"
+        puts "You are logged out."
+        $current_user = nil
+        $cart = []
+        logged_out = true
     end
   end
 end
 
 def checkout
-  if $cart.empty?
-    puts "Your cart is empty."
-    puts "Go get some shit!"
-  else
-    sum = 0.0
+  sum = 0.0
+  $cart.each do |item|
+    sum += item.price
+  end
+  puts "Your cart is $#{sum}."
+  prompt = TTY::Prompt.new
+  if prompt.yes?("Do you wish to checkout?")
     $cart.each do |item|
-      sum += item.price
+      new_trans = Transaction.find_or_create_by(user_id: $current_user.id , electronic_id: item.id)
+      new_trans.quantity ||= 0
+      new_trans.quantity += 1
+      new_trans.save
     end
-    puts "Your cart is $#{sum}."
-    prompt = TTY::Prompt.new
-    if prompt.yes?("Do you wish to checkout?")
-      $cart.each do |item|
-        new_trans = Transaction.find_or_create_by(user_id: $current_user.id , electronic_id: item.id)
-        new_trans.quantity ||= 0
-        new_trans.quantity += 1
-        new_trans.save
-      end
-      $cart = []
-      puts "You spent $#{sum}."
-    else
-      puts "Okay, bye!"
-    end
+    $cart = []
+    puts "You spent $#{sum}."
+  else
+    puts "Okay, bye!"
   end
 end
 
@@ -125,8 +139,6 @@ def shop
       product_name = nil
     end
   end
-
-
 end
 
 def start
