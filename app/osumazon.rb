@@ -55,23 +55,24 @@ def cart
   $cart
 end
 
-def show_cart
-  choices = $cart.map do |item|
-    item.name
+def review_cart
+  choices = {}
+  $cart.each_with_index do |item, i|
+    choices["#{i+1}. #{item.name}"] = i
   end
   prompt = TTY::Prompt.new
-  items_to_delete = prompt.multi_select("Choose items to delete: ", choices)
-  items_to_delete.each do |item|
-    if prompt.yes?("Are you sure you want to delete #{item}?")
-      $cart.delete_if {|obj| obj.name == item}
-      puts "Deleted #{item}."
+  indices_to_delete = prompt.multi_select("Choose items to delete: ", choices)
+  indices_to_delete.each do |index|
+    if prompt.yes?("Are you sure you want to delete #{$cart[index].name}?")
+      puts "Deleted #{$cart[index].name}."
+      $cart.delete_at(index)
     end
   end
 end
 
 def menu
   prompt = TTY::Prompt.new
-  options = ["Shop", "Checkout", "Logout"]
+  options = ["Shop", "Checkout", "Logout", "Settings"]
   logged_out = false
 
   until logged_out
@@ -84,11 +85,16 @@ def menu
           puts "Your cart is empty."
           puts "Go get some shit!"
         else
-          show_cart
+          review_cart
           checkout
         end
       when "Logout"
         puts "You are logged out."
+        $current_user = nil
+        $cart = []
+        logged_out = true
+      when "Settings"
+        settings
         $current_user = nil
         $cart = []
         logged_out = true
@@ -157,6 +163,32 @@ def start
     when "Quit"
       puts "Bye bye from Osumazon!"
       quit = true
+    end
+  end
+end
+
+def settings
+  exit = false
+  options = ["exit", "Change Password", "Delete Account"]
+  prompt = TTY::Prompt.new
+
+  until exit
+    option = prompt.select("Select from the following: ", options)
+    case option
+    when "Change Password"
+      print "Enter new password: "
+      password = gets.chomp
+      $current_user.password = password
+      $current_user.save
+      puts "Password updated."
+    when "Delete Account"
+      if prompt.yes?("Are you sure you want to delete your account?")
+        $current_user.destroy
+        exit = true
+        puts "Sorry to see you go! :("
+      end
+    when "exit"
+      exit = true
     end
   end
 end
