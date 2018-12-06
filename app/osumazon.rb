@@ -2,6 +2,7 @@ $current_user = nil
 $cart = []
 
 def login
+  prompt = TTY::Prompt.new
   logged_in = false
   exit = false
   until logged_in || exit
@@ -13,8 +14,7 @@ def login
     else
       current_user = User.find_by(username: username)
       if current_user
-        puts "Enter your password. "
-        password = STDIN.gets.chomp
+        password = prompt.mask("Type in your password: ")
         logged_in = current_user.password == password
         if logged_in
           puts "Welcome to Osumazon!"
@@ -34,10 +34,11 @@ def create_account
   created = false
   until created
     puts "Enter your new username (Can’t be 'exit'): "
-    username = STDIN.gets.chomp
-    if !User.find_by(username: username)
-      puts "Enter your new password: "
-      password = STDIN.gets.chomp
+    username = gets.chomp
+    if username == "exit"
+      puts "We told you, it can’t be 'exit'"
+    elsif !User.find_by(username: username)
+      password = prompt.mask("Type in your password: ")
       User.create(username: username, password: password)
       puts "Your new account details. Username: #{username}, Password: #{password}."
       created = true
@@ -75,36 +76,47 @@ def menu
   options = ["Shop", "Checkout", "Logout", "Settings"]
   logged_out = false
 
-  until logged_out
+  while $current_user
     choice = prompt.select("What would you like to do? ", options)
     case choice
-      when "Shop"
-        shop
-      when "Checkout"
+    when "Shop"
+      system "clear"
+      shop
+      system "clear"
+    when "Checkout"
+      system "clear"
+      if $cart.empty?
+        puts "Your cart is empty."
+        puts "Go get some shit!"
+      else
+        system "clear"
+        review_cart
+        system "clear"
         if $cart.empty?
           puts "Your cart is empty."
           puts "Go get some shit!"
         else
-          review_cart
-          if $cart.empty?
-            puts "Your cart is empty."
-            puts "Go get some shit!"
-          else
-            checkout
-          end
+          checkout
+          system "clear"
         end
-      when "Logout"
-        puts "You are logged out."
-        $current_user = nil
-        $cart = []
-        logged_out = true
-      when "Settings"
-        settings
-        $current_user = nil
-        $cart = []
-        logged_out = true
+      end
+    when "Logout"
+      system "clear"
+      logout
+      system "clear"
+    when "Settings"
+      system "clear"
+      settings
+      system "clear"
     end
   end
+end
+
+def logout
+  system "clear"
+  puts "You are logged out."
+  $current_user = nil
+  $cart = []
 end
 
 def checkout
@@ -112,6 +124,7 @@ def checkout
   $cart.each do |item|
     sum += item.price
   end
+  system "clear"
   puts "Your cart is $#{sum}."
   prompt = TTY::Prompt.new
   if prompt.select("Do you wish to checkout?", ["Yes", "No"]) == "Yes"
@@ -135,18 +148,16 @@ def shop
   prompt = TTY::Prompt.new
 
   until complete
-    category = prompt.select("Select from the following: ", categories)
+    system "clear"
+    category = prompt.select("Select a category: ", categories)
     product_names = Electronic.where(category: category).map {|p| p.name}
     if category == "exit"
       complete = true
     else
-      product_name = prompt.select("Select from the following: ", product_names)
-      product = Electronic.find_by(name: product_name)
+      product_name = prompt.select("Select an item: ", product_names)
       if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
+        product = Electronic.find_by(name: product_name)
         add_to_cart(product)
-        complete = true
-      else
-        puts "Have fun!"
       end
       category = nil
       product_name = nil
@@ -159,10 +170,13 @@ def start
   choices = ["Login", "Create Account", "Quit"]
   prompt = TTY::Prompt.new
   until quit
+    system "clear"
     choice = prompt.select("Welcome to Osumazon! What would you like to do?", choices)
     case choice
     when "Login"
+      system "clear"
       if login
+        system "clear"
         menu
       end
     when "Create Account"
@@ -175,37 +189,53 @@ def start
 end
 
 def settings
-  exit = false
-  options = ["exit", "Change Password", "Delete Account"]
   prompt = TTY::Prompt.new
-
-  until exit
+  completed = false
+  options = ["exit", "Change Password", "Delete Account"]
+  until completed || !$current_user
+    system "clear"
     option = prompt.select("Select from the following: ", options)
     case option
     when "Change Password"
-      print "Enter new password: "
-      password = gets.chomp
-      $current_user.password = password
-      $current_user.save
-      puts "Password updated."
+      change_password
     when "Delete Account"
-      deleted = false
-      until deleted
-      if prompt.select('Are you sure you want to delete your account?', ["Yes", "No"]) == "Yes"
-        print "Type in your password:"
-        delete_account_password = gets.chomp
-        if delete_account_password == $current_user.password
-          $current_user.destroy
-          exit = true
-          puts "Sorry to see you go! :("
-          deleted = true
-        else
-          puts "Wrong password. Please type in your password."
-          deleted = false
-        end
-      end
+      delete_account
     when "exit"
-      exit = true
+      completed = true
     end
+  end
+end
+
+def delete_account
+  prompt = TTY::Prompt.new
+  deleted = false
+  until deleted
+    if prompt.select('Are you sure you want to delete your account?', ["Yes", "No"]) == "Yes"
+      delete_account_password = prompt.mask("Type in your password: ")
+      if delete_account_password == $current_user.password
+        $current_user.destroy
+        exit = true
+        puts "Sorry to see you go! :("
+        deleted = true
+        $current_user = nil
+      else
+        puts "Wrong password. Please type in your password."
+        deleted = false
+      end
+    else
+      deleted = true
+    end
+  end
+end
+
+def change_password
+  prompt = TTY::Prompt.new
+  if prompt.select('Are you sure you want to update your password?', ["Yes", "No"]) == "Yes"
+    password = prompt.mask("Type in your new password: ")
+    $current_user.password = password
+    $current_user.save
+    puts "Password updated."
+    puts "You are logged out."
+    $current_user = nil
   end
 end
