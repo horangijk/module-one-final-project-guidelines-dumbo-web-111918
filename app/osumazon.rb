@@ -143,21 +143,24 @@ end
 
 def shop
   complete = false
-  categories = Electronic.categories
+  categories = Electronic.categories.uniq
   categories << "exit"
   prompt = TTY::Prompt.new
 
   until complete
     system "clear"
     category = prompt.select("Select a category: ", categories)
-    product_names = Electronic.where(category: category).map {|p| p.name}
     if category == "exit"
       complete = true
     else
+      product_names = Electronic.where(category: category).map {|p| p.name}
+      product_names << "exit"
       product_name = prompt.select("Select an item: ", product_names)
-      if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
-        product = Electronic.find_by(name: product_name)
-        add_to_cart(product)
+      if product_name != "exit"
+        if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
+          product = Electronic.find_by(name: product_name)
+          add_to_cart(product)
+        end
       end
       category = nil
       product_name = nil
@@ -182,6 +185,7 @@ def start
     when "Create Account"
       create_account
     when "Quit"
+      system "clear"
       puts "Bye bye from Osumazon!"
       quit = true
     end
