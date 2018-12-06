@@ -84,7 +84,7 @@ end
 
 def menu
   prompt = TTY::Prompt.new
-  options = ["Shop", "Checkout", "Settings", "Logout"]
+  options = ["Shop", "Checkout", "Prior Purchases", "Settings", "Logout"]
   logged_out = false
 
   while $current_user
@@ -119,6 +119,10 @@ def menu
       system "clear"
       settings
       system "clear"
+    when "Prior Purchases"
+      system "clear"
+      $current_user.display_transactions
+      system "clear"
     end
   end
 end
@@ -126,6 +130,7 @@ end
 def logout
   system "clear"
   puts "You are logged out."
+  sleep(1)
   $current_user = nil
   $cart = []
 end
@@ -214,57 +219,13 @@ def settings
     option = prompt.select("Select from the following: ", options)
     case option
     when "Change Password"
-      change_password
+      $current_user.change_password
     when "Delete Account"
-      delete_account
+      if $current_user.delete_account
+        logout
+      end
     when "exit"
       completed = true
-    end
-  end
-end
-
-def delete_account
-  prompt = TTY::Prompt.new
-  deleted = false
-  until deleted
-    if prompt.select('Are you sure you want to delete your account?', ["Yes", "No"]) == "Yes"
-      delete_account_password = prompt.mask("Type in your password: ")
-      if delete_account_password == $current_user.password
-        $current_user.destroy
-        exit = true
-        system "clear"
-        puts "Sorry to see you go! :("
-        sleep(1)
-        deleted = true
-        $current_user = nil
-      else
-        system "clear"
-        puts "Wrong password."
-        sleep(1)
-        deleted = false
-      end
-    else
-      deleted = true
-    end
-  end
-end
-
-def change_password
-  prompt = TTY::Prompt.new
-  if prompt.select('Are you sure you want to update your password?', ["Yes", "No"]) == "Yes"
-    password = prompt.mask("Type in your new password: ")
-    if password == $current_user.password
-      system "clear"
-      puts "Cannot change password. Cannot use the same password."
-      sleep(1)
-    else
-      $current_user.password = password
-      $current_user.save
-      system "clear"
-      puts "Password updated."
-      puts "You are logged out."
-      sleep(2)
-      $current_user = nil
     end
   end
 end
