@@ -11,9 +11,11 @@ def login
     if username == 'exit'
       exit = true
       puts "Exiting!"
+      sleep(1)
     else
       current_user = User.find_by(username: username)
       if current_user
+        system "clear"
         password = prompt.mask("Type in your password: ")
         logged_in = current_user.password == password
         if logged_in
@@ -23,6 +25,7 @@ def login
         end
         $current_user = current_user
       else
+        system "clear"
         puts "Invalid username."
       end
     end
@@ -31,18 +34,26 @@ def login
 end
 
 def create_account
+  prompt = TTY::Prompt.new
   created = false
   until created
     puts "Enter your new username (Can’t be 'exit'): "
     username = gets.chomp
     if username == "exit"
-      puts "We told you, it can’t be 'exit'"
+      if prompt.select("Are you sure you want to exit?", ["Yes", "No"]) == "Yes"
+        system "clear"
+        created = true
+      else
+        system "clear"
+        puts "We told you, it can’t be 'exit'"
+      end
     elsif !User.find_by(username: username)
       password = prompt.mask("Type in your password: ")
       User.create(username: username, password: password)
       puts "Your new account details. Username: #{username}, Password: #{password}."
       created = true
     else
+      system "clear"
       puts "Username already chosen!"
     end
   end
@@ -62,7 +73,7 @@ def review_cart
     choices["#{i+1}. #{item.name}"] = i
   end
   prompt = TTY::Prompt.new
-  indices_to_delete = prompt.multi_select("Choose items to delete: ", choices)
+  indices_to_delete = prompt.multi_select("Press 'SPACE' to choose items to remove. Press 'ENTER' to continue.", choices)
   indices_to_delete.each do |index|
     if prompt.select("Are you sure you want to delete #{$cart[index].name}?", ["Yes", "No"]) == "Yes"
       puts "Deleted #{$cart[index].name}."
@@ -73,7 +84,7 @@ end
 
 def menu
   prompt = TTY::Prompt.new
-  options = ["Shop", "Checkout", "Logout", "Settings"]
+  options = ["Shop", "Checkout", "Settings", "Logout"]
   logged_out = false
 
   while $current_user
@@ -125,7 +136,7 @@ def checkout
     sum += item.price
   end
   system "clear"
-  puts "Your cart is $#{sum}."
+  puts "Your cart is $#{'%.2f' % sum}."
   prompt = TTY::Prompt.new
   if prompt.select("Do you wish to checkout?", ["Yes", "No"]) == "Yes"
     $cart.each do |item|
@@ -135,7 +146,8 @@ def checkout
       new_trans.save
     end
     $cart = []
-    puts "You spent $#{sum}."
+    puts "You spent $#{'%.2f' % (sum * 1.08875)}."
+    sleep(2)
   else
     puts "Okay, bye!"
   end
@@ -157,8 +169,9 @@ def shop
       product_names << "exit"
       product_name = prompt.select("Select an item: ", product_names)
       if product_name != "exit"
+        product = Electronic.find_by(name: product_name)
+        print "#{'%.2f' % product.price} "
         if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
-          product = Electronic.find_by(name: product_name)
           add_to_cart(product)
         end
       end
@@ -219,11 +232,15 @@ def delete_account
       if delete_account_password == $current_user.password
         $current_user.destroy
         exit = true
+        system "clear"
         puts "Sorry to see you go! :("
+        sleep(1)
         deleted = true
         $current_user = nil
       else
-        puts "Wrong password. Please type in your password."
+        system "clear"
+        puts "Wrong password."
+        sleep(1)
         deleted = false
       end
     else
@@ -236,10 +253,18 @@ def change_password
   prompt = TTY::Prompt.new
   if prompt.select('Are you sure you want to update your password?', ["Yes", "No"]) == "Yes"
     password = prompt.mask("Type in your new password: ")
-    $current_user.password = password
-    $current_user.save
-    puts "Password updated."
-    puts "You are logged out."
-    $current_user = nil
+    if password == $current_user.password
+      system "clear"
+      puts "Cannot change password. Cannot use the same password."
+      sleep(1)
+    else
+      $current_user.password = password
+      $current_user.save
+      system "clear"
+      puts "Password updated."
+      puts "You are logged out."
+      sleep(2)
+      $current_user = nil
+    end
   end
 end
