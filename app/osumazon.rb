@@ -10,8 +10,10 @@ def login
     username = STDIN.gets.chomp
     if username == 'exit'
       exit = true
+      system "clear"
       puts "Exiting!"
       sleep(1)
+
     else
       current_user = User.find_by(username: username)
       if current_user
@@ -152,7 +154,9 @@ def checkout
     end
     $cart = []
     puts "You spent $#{'%.2f' % (sum * 1.08875)}."
-    sleep(2)
+    sleep(1)
+    print "Press any key to continue: "
+    STDIN.getch
   else
     puts "Okay, bye!"
   end
@@ -175,7 +179,7 @@ def shop
       product_name = prompt.select("Select an item: ", product_names)
       if product_name != "exit"
         product = Electronic.find_by(name: product_name)
-        print "#{'%.2f' % product.price} "
+        print "$#{'%.2f' % product.price} "
         if prompt.select('Add to cart?', ["Yes", "No"]) == "Yes"
           add_to_cart(product)
         end
