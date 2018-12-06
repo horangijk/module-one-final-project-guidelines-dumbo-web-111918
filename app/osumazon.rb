@@ -189,10 +189,20 @@ def settings
       $current_user.save
       puts "Password updated."
     when "Delete Account"
+      deleted = false
+      until deleted
       if prompt.select('Are you sure you want to delete your account?', ["Yes", "No"]) == "Yes"
-        $current_user.destroy
-        exit = true
-        puts "Sorry to see you go! :("
+        print "Type in your password:"
+        delete_account_password = gets.chomp
+        if delete_account_password == $current_user.password
+          $current_user.destroy
+          exit = true
+          puts "Sorry to see you go! :("
+          deleted = true
+        else
+          puts "Wrong password. Please type in your password."
+          deleted = false
+        end
       end
     when "exit"
       exit = true
